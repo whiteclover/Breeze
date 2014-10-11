@@ -1,0 +1,3 @@
+class RoomMgr(object):
+	pass
+	
