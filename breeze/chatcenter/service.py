@@ -74,14 +74,13 @@ class ChatConnection(object):
 			ROOM.broadcast(msg)
 		else:
 			if self.net_handler:
-				self.netpacket(self, handle_packet)
+				self.net_packet(self.packet)
 
 	def write_reply(self, code, msg):
 		LOGGER.info('msg : %s', msg.msg)
 		head = struct.pack('!BB', code, len(msg.msg))
 		head += msg.msg
 		self.stream.write(head)
-
 
 	def handle_ping(self, netpacket):
 		pass
@@ -104,13 +103,11 @@ class ChatConnection(object):
 	def handle_sub_channel(self, netpacket):
 		pass
 
-
 	def handle_unsub_channel(self, netpacket):
 		pass
 
 	def handle_enter_guild(self, netpacket):
 		pass
-
 
 	def handle_leave_guild(self, netpacket):
 		pass
@@ -120,7 +117,6 @@ class ChatConnection(object):
 
 	def handle_remove_friend(self, netpacket):
 		pass
-
 
 	def handle_kick(self, netpacket):
 		pass
