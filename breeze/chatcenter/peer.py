@@ -20,3 +20,25 @@ class Peer(object):
 	
 	def send(self, msg):
 		self.con.write_reply(2, msg)
+
+class AccountManager(object):
+
+	def __init__(self):
+		self.peers = {}
+
+	def add(self, sid, peer):
+		self.peers[sid] = peer
+
+	def find(self, sid):
+		return self.peers.get(sid)
+
+	def update(self, sid, peer):
+		if sid in self.peers:
+			self.peers[sid] = peer
+
+	def remove(self, sid, peer):
+		if sid in self.peers():
+			del self.peers[sid]
+
+	def __contains__(self, sid):
+		return self.sid in self.peers
