@@ -1,3 +1,5 @@
+from breeze.util import json_loads
+
 class NetPacket(object):
 	def __init__(self, opcode, data='', data_len=0):
 		self.opcode = opcode

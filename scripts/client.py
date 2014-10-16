@@ -22,14 +22,16 @@ if __name__ == '__main__':
 	client.connect(('127.0.0.1', 8011))
 
 	try:
-		for i in range(10):
-			if i == 0:
-				send(client, opcode.REQ_PING, 'ping')
-				recv(client)
-			else:
-				send(client, opcode.REQ_ROOM_MSG, 'room msg')
+		send(client, opcode.REQ_PING, 'ping')
+		recv(client)
+		send(client, opcode.REQ_ENTER_ROOM, 'test_room')
+		recv(client)
 		time.sleep(5)
+		print 'recv room msg'
 		for i in range(100):
 			recv(client)
+		send(client, opcode.REQ_LEAVE_ROOM, 'test_room')
+		recv(client)
+		client.close()
 	except KeyboardInterrupt:
 			exit(1)

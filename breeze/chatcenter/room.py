@@ -1,5 +1,7 @@
 import time
+import logging
 
+LOGGER = logging.getLogger(__name__)
 class Room(object):
 
 	def __init__(self, name):
@@ -10,6 +12,7 @@ class Room(object):
 		if msg:
 			for peer in self.peers.values():
 				if peer != msg.user:
+					LOGGER.info('peer: %s', peer)
 					peer.send(msg)
 
 	def add_peer(self, peer):
@@ -34,6 +37,18 @@ class RoomManager(object):
 	def remove_room(self, room):
 		if room.name in self.rooms:
 			del self.rooms[room.name]
+
+	def add_peer_to_room(self, room_name, peer):
+		room = self.rooms.get(room_name)
+		if not room:
+			room = Room(room_name)
+			self.rooms[room_name] = room
+		room.add_peer(peer)
+
+	def remove_peer_from_room(self, room_name, peer):
+		room = self.rooms.get(room_name)
+		if room:
+			room.remove_peer(peer)
 
 	def broadcast(self, room_name, msg):
 		room = self.rooms.get(room_name)

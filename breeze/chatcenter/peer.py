@@ -21,6 +21,10 @@ class Peer(object):
 	def send(self, msg):
 		self.con.write_reply(2, msg)
 
+	def clear(self):
+		for room in self.in_room.values():
+			room.remove_peer(self)
+
 class AccountManager(object):
 
 	def __init__(self):

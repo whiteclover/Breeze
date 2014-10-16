@@ -12,10 +12,11 @@ from breeze.net.heartbeat import HeartBeat
 from breeze.net.netpacket import NetPacket
 from breeze.chatcenter import opcode
 
-LOGGER = logging.getLogger(__name__)
 
-ROOM = Room('test')
-sHeartBeatMgr = HeartBeat()
+from breeze.chatcenter.singleton import sHeartBeatMgr, sRoomMgr
+from breeze.chatcenter.nethandler import ChatDisptcher
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ChatConnection(object):
@@ -30,9 +31,8 @@ class ChatConnection(object):
 		LOGGER.info("SEED : %d", self._SEED)
 		ChatConnection._SEED = ChatConnection._SEED + 1
 		self.packet = NetPacket(opcode.REQ_NONE, '', 0)
-		self.net_handler = net_handler
+		self.net_handler = net_handler(self)
 		self.peer = Peer(self, str(ChatConnection._SEED))
-		ROOM.add_peer(self.peer)
 		self.stream.set_close_callback(self.on_connection_close)
 		self.on_conneted()
 
@@ -48,7 +48,7 @@ class ChatConnection(object):
 			LOGGER.info('close stream:%s', self.stream)
 			self.stream.close()
 		LOGGER.info('call close')
-		ROOM.remove_peer(self.peer)
+		self.peer.clear()
 		sHeartBeatMgr.remove(self)
 
 
@@ -56,7 +56,10 @@ class ChatConnection(object):
 		cmd, leng  = struct.unpack("!BB", data)
 		self.packet.opcode = cmd
 		self.packet.size = leng
-		self.stream.read_bytes(leng, self.on_body)
+		if leng:
+			self.stream.read_bytes(leng, self.on_body)
+		else:
+			self.handle_packet()
 
 	def on_body(self, data):
 		self.packet.data = data
@@ -68,22 +71,22 @@ class ChatConnection(object):
 		if self.packet.opcode == opcode.REQ_PING:
 			msg = Message('PONG', self.peer)
 			self.write_reply(opcode.REQ_PING, msg)
-		elif self.packet.opcode == opcode.REQ_ROOM_MSG:
-			LOGGER.info('ROOM MSG')
-			msg = Message('nihao', self.peer)
-			ROOM.broadcast(msg)
 		else:
 			if self.net_handler:
-				self.net_packet(self.packet)
+				self.net_handler(self.packet)
 
 	def write_reply(self, code, msg):
 		LOGGER.info('msg : %s', msg.msg)
-		head = struct.pack('!BB', code, len(msg.msg))
-		head += msg.msg
-		self.stream.write(head)
+		self.send(code, msg.msg)
+
+	def send(self, code, msg):
+		head = struct.pack('!BB', code, len(msg))
+		head += msg
+		self.stream.write(str(head))
 
 	def handle_ping(self, netpacket):
-		pass
+		message = Message(str(time.time()), self.peer)
+		self.write_reply(netpacket.opcode, message)
 
 	def handle_login(self, netpacket):
 		pass
@@ -92,12 +95,6 @@ class ChatConnection(object):
 		pass
 
 	def handle_kick(self, netpacket):
-		pass
-
-	def handle_enter_room(self, netpacket):
-		pass
-
-	def handle_leave_room(self, netpacket):
 		pass
 
 	def handle_sub_channel(self, netpacket):
@@ -122,20 +119,17 @@ class ChatConnection(object):
 		pass
 
 
-
-
 class ChatServer(TCPServer):
 	"""docstring for ChatServer"""
 	def __init__(self, io_loop=None, timeout_secs=10, **kwargs):
 		io_loop = io_loop or tornado.ioloop.IOLoop.current()
 		self.timeout_secs = 10
 		sHeartBeatMgr.initialize(io_loop, timeout_secs)
-		sHeartBeatMgr.heartbeat()
-		#sRoomMgr.heartbeat()
+		#sHeartBeatMgr.heartbeat()
 		TCPServer.__init__(self, io_loop=io_loop, **kwargs)
 
 	def handle_stream(self, stream, address):
-		ChatConnection(stream, address)
+		ChatConnection(stream, address, ChatDisptcher)
 
 	def _handle_connection(self, connection, address):
 		try:
@@ -143,7 +137,6 @@ class ChatServer(TCPServer):
 			self.handle_stream(stream, address)
 		except Exception:
 			LOGGER.error("Error in connection callback", exc_info=True)
-
 
 
 class ChatService(object):

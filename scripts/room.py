@@ -3,7 +3,7 @@ import logging
 import struct
 import time
 logger = logging.getLogger('room')
-
+from breeze.util import json_dumps
 
 from breeze.chatcenter import opcode
 
@@ -23,16 +23,19 @@ if __name__ == '__main__':
 	client.connect(('127.0.0.1', 8011))
 
 	try:
-		for i in range(10):
-			if i == 0:
-				send(client, opcode.REQ_PING, 'ping')
-				recv(client)
-			else:
-				send(client, opcode.REQ_ROOM_MSG, 'room msg')
+		send(client, opcode.REQ_PING, 'ping')
+		recv(client)
+		send(client, opcode.REQ_ENTER_ROOM, 'test_room')
+		recv(client)
 		time.sleep(1)
 		print 'send room'
 		for i in range(100):
-			send(client, opcode.REQ_ROOM_MSG, 'room msg')
+			send(client, opcode.REQ_ROOM_MSG, json_dumps(
+				{'room_name' : 'test_room',
+				'payload': 'msg num: ' + str(i)
+				}))
+		send(client, opcode.REQ_LEAVE_ROOM, 'test_room')
+		recv(client)
 		client.close()
 	except KeyboardInterrupt:
 			exit(1)
