@@ -1,24 +1,41 @@
+import time
+
 class Room(object):
 
 	def __init__(self, name):
-		self.name
+		self.name = name
 		self.peers = {}
-		self.messages = []
-		self.message_limit = 1000
-		self.peer_limit = 100
-		self.in_pos = 0
-		self.out_pos = 0
 
-	def add_message(self, message):
-		if self.in_pos != self.out_pos:
-			self.messages[self.in_pos+1] = messages
+	def broadcast(self, msg):
+		if msg:
+			for peer in self.peers.values():
+				if peer != msg.user:
+					peer.send(msg)
 
 	def add_peer(self, peer):
 		if peer.uid in self.peers:
 			raise Exception('in')
+		peer.add_room(self)
 		self.peers[peer.uid] = peer
 
 	def remove_peer(self, peer):
+		peer.remove_room(self)
 		del self.peers[peer.uid]
 
 
+class RoomManager(object):
+
+	def __init__(self):
+		self.rooms = {}
+
+	def add_room(self, room):
+		self.rooms[room.name] = room
+
+	def remove_room(self, room):
+		if room.name in self.rooms:
+			del self.rooms[room.name]
+
+	def broadcast(self, room_name, msg):
+		room = self.rooms.get(room_name)
+		if room:
+			room.broadcast(msg)

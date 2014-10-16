@@ -2,8 +2,6 @@ from setuptools import setup, find_packages
 import sys
 from breeze import __version__
 
-with open('README.rst') as f:
-    long_description = f.read()
 
 setup(
     name = 'Breeze',
@@ -19,7 +17,6 @@ setup(
     zip_safe=False,
     include_package_data=True,
     install_requires = ['setuptools'],
-    long_description=long_description,
     classifiers=(
         "Development Status :: Production/Alpha",
         "License :: GPL",
